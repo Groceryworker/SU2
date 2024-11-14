@@ -5,7 +5,7 @@ project('SU2', 'c', 'cpp',
         default_options: ['buildtype=release',
                           'warning_level=0',
                           'c_std=c99',
-                          'cpp_std=c++11'])
+                          'cpp_std=c++14'])
 
 fsmod = import('fs')
 if not fsmod.exists('su2preconfig.timestamp')
@@ -301,6 +301,29 @@ if omp and get_option('enable-autodiff')
   if p.returncode() != 0
     error(p.stdout())
   endif
+endif
+
+# Enzyme autodiff integration
+if get_option('enable-enzyme-ad')
+  # Set the LLVM include path here
+  llvm_include_dir = '/usr/lib/llvm-15/include'
+  enzyme_include_dir = include_directories(
+      '/home/martin/CMS/MasterThesis/Combined_SU2_Enzyme/Enzyme/enzyme/Enzyme',  # Enzyme header files
+      '/home/martin/CMS/MasterThesis/Combined_SU2_Enzyme/Enzyme/enzyme/build/Enzyme',  # Enzyme library files
+      llvm_include_dir
+      )
+  enzyme_lib = '/home/martin/CMS/MasterThesis/Combined_SU2_Enzyme/Enzyme/enzyme/build/Enzyme/LLVMEnzyme-15.so'
+  
+  # Remove the `-Wl,--start-group` and `-Wl,--end-group` options
+  enzyme_link_args = [enzyme_lib]
+
+  enzyme_dep = declare_dependency(
+    include_directories: enzyme_include_dir,
+    link_args: enzyme_link_args
+  )
+
+  su2_cpp_args += '-DENABLE_ENZYME_AD'
+  su2_deps += enzyme_dep
 endif
 
 # compile common library

@@ -226,6 +226,119 @@ if get_option('enable-autodiff')
                           link_args: profiling_args)
 endif
 
+#if get_option('enable-enzyme-ad')
+#
+#  enzyme_include_dir = '/home/martin/CMS/MasterThesis/Combined_SU2_Enzyme/Enzyme/enzyme/build/Enzyme/'  # Adjust this path
+#  enzyme_plugin_path = '/home/martin/CMS/MasterThesis/Combined_SU2_Enzyme/Enzyme/enzyme/build/Enzyme/LLVMEnzyme-15.so'  # Adjust this path
+#  
+#  # Extract CLI11 include path manually
+#  cli11_include_dir = '/home/martin/CMS/MasterThesis/Combined_SU2_Enzyme/SU2_Main/externals/CLI11'
+#  medi_include_dir = '/home/martin/CMS/MasterThesis/Combined_SU2_Enzyme/SU2_Main/externals/medi/include'
+#  mel_include_dir = '/home/martin/CMS/MasterThesis/Combined_SU2_Enzyme/SU2_Main/externals/mel'
+#  catch2_include_dir= '/home/martin/CMS/MasterThesis/Combined_SU2_Enzyme/SU2_Main/externals/catch2/'
+#  su2_cfd_src_dir = '/home/martin/CMS/MasterThesis/Combined_SU2_Enzyme/SU2_Main/SU2_CFD/src/'
+#  su2_cfd_include_dir = '/home/martin/CMS/MasterThesis/Combined_SU2_Enzyme/SU2_Main/SU2_CFD/include'
+#
+#  common_include_dir = '/home/martin/CMS/MasterThesis/Combined_SU2_Enzyme/SU2_Main/Common/src'
+#  common_src_graph = '/home/martin/CMS/MasterThesis/Combined_SU2_Enzyme/SU2_Main/Common/src/graph_coloring_structure.cpp'
+#  common_src_config = '/home/martin/CMS/MasterThesis/Combined_SU2_Enzyme/SU2_Main/Common/src/CConfig.cpp'
+#  common_src_ad_structure = '/home/martin/CMS/MasterThesis/Combined_SU2_Enzyme/SU2_Main/Common/src/basic_types/ad_structure.cpp'
+#  common_src_wall_model = '/home/martin/CMS/MasterThesis/Combined_SU2_Enzyme/SU2_Main/Common/src/wall_model.cpp'
+#  common_src_mpi_structure = '/home/martin/CMS/MasterThesis/Combined_SU2_Enzyme/SU2_Main/Common/include/parallelization/mpi_structure.cpp'
+#  common_src_omp_structure = '/home/martin/CMS/MasterThesis/Combined_SU2_Enzyme/SU2_Main/Common/include/parallelization/omp_structure.cpp'
+#
+#  # Step 1: Generate the intermediate LLVM IR file SU2_CFD.ll from SU2_CFD.cpp
+#  su2_cfd_ir = custom_target('SU2_CFD_LLVM_IR',
+#                              input: 'SU2_CFD.cpp',
+#                              output: 'SU2_CFD_IR.ll',
+#                             command: [
+#                               'clang++', '@INPUT@', '-S', '-emit-llvm', '-o', '@OUTPUT@',
+#                               '-DENABLE_ENZYME_AD',
+#                               '-I', enzyme_include_dir,
+#                               '-I', su2_cfd_src_dir,
+#                               '-I', su2_cfd_include_dir,
+#                               '-I', cli11_include_dir,
+#                               '-I', mel_include_dir
+#                             ],
+#                             build_by_default: true,
+#                             )
+#  
+#  # Step 2: Apply Enzyme's AD transformation on SU2_CFD.ll to produce SU2_CFD_opt.ll
+#  su2_cfd_opt_ir = custom_target('SU2_CFD_Optimized_IR',
+#                                  input: su2_cfd_ir,
+#                                  output: 'SU2_CFD_OPT.ll',
+#                                 command: [
+#                                   'opt-15', '@INPUT@', '--load-pass-plugin=' + enzyme_plugin_path,
+#                                   '-passes=enzyme', '-o', '@OUTPUT@', '-S'
+#                                 ],
+#                                 build_by_default: true,
+#                                 depends: su2_cfd_ir
+#                                 )
+#  
+#  # Step 3: Compile SU2_CFD_opt.ll to an object file SU2_CFD_opt.o
+#  su2_cfd_opt_obj = custom_target('SU2_CFD_Opt_Obj',
+#                              input: su2_cfd_opt_ir,
+#                              output: 'SU2_CFD_opt.o',
+#                              command: [
+#                                'clang++', '-c', '@INPUT@', '-o', '@OUTPUT@',
+#                                '-fPIC', '-DENABLE_ENZYME_AD'
+#                              ],
+#                              build_by_default: true,
+#                              depends: su2_cfd_opt_ir
+#                              )
+#
+#  
+#    # Link object files and create the executable
+#  su2_cfd_lib_enzyme = static_library(
+#    'SU2core_Enzyme',
+#    su2_cfd_src,
+#    install: false,
+#    dependencies: [su2_deps, common_dep],
+#    cpp_args: [default_warning_flags, su2_cpp_args, '-DENABLE_ENZYME_AD']
+#  )
+#
+#  su2_cfd_dep_enzyme = declare_dependency(
+#    link_with: su2_cfd_lib_enzyme,
+#    include_directories: su2_cfd_include
+#  )
+#
+#  su2_cfd_enzyme = executable(
+#    'SU2_CFD_Enzyme',
+#    su2_cfd_opt_obj,
+#    install: true,
+#    dependencies: [su2_cfd_dep_enzyme, su2_deps, common_dep],
+#    cpp_args: ['-fPIC'] + [default_warning_flags, su2_cpp_args, '-DENABLE_ENZYME_AD'] + profiling_args,
+#    link_args: profiling_args,
+#    link_with: [su2_cfd_lib_enzyme]
+#  )
+#endif
+
+#Enzyme autodiff build option (without additional optimization steps)
+if get_option('enable-enzyme-ad')
+  su2_cfd_lib_enzyme = static_library(
+    'SU2core_Enzyme',
+    su2_cfd_src,
+    install: false,
+    dependencies: [su2_deps, common_dep],
+    cpp_args: [default_warning_flags, su2_cpp_args, '-DENABLE_ENZYME_AD']
+  )
+
+  su2_cfd_dep_enzyme = declare_dependency(
+    link_with: su2_cfd_lib_enzyme,
+    include_directories: su2_cfd_include
+  )
+
+  su2_cfd_enzyme = executable(
+    'SU2_CFD_Enzyme',
+    'SU2_CFD.cpp',
+    install: true,
+    dependencies: [su2_cfd_dep_enzyme, su2_deps, common_dep],
+    cpp_args: ['-fPIC'] + [default_warning_flags, su2_cpp_args, '-DENABLE_ENZYME_AD'] + profiling_args,
+    link_args: profiling_args,
+    link_with: [su2_cfd_lib_enzyme]
+  )
+endif
+
 if get_option('enable-directdiff')
   su2_cfd_lib_dd = static_library('SU2core_DIRECTDIFF',
                                su2_cfd_src,

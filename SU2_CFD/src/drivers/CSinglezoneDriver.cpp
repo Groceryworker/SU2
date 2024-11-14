@@ -125,6 +125,7 @@ void CSinglezoneDriver::Preprocess(unsigned long TimeIter) {
     solver_container[ZONE_0][INST_0][MESH_0][FLOW_SOL]->SetInitialCondition(geometry_container[ZONE_0][INST_0],
                                                                             solver_container[ZONE_0][INST_0],
                                                                             config_container[ZONE_0], TimeIter);
+    cout << endl <<"definitely Fluid Problem" << endl;
   }
   if (config_container[ZONE_0]->GetKind_Species_Model() != SPECIES_MODEL::NONE) {
     solver_container[ZONE_0][INST_0][MESH_0][SPECIES_SOL]->SetInitialCondition(geometry_container[ZONE_0][INST_0],

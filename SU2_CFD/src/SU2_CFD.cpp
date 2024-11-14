@@ -26,6 +26,7 @@
  */
 
 #include "../include/SU2_CFD.hpp"
+#include "../../../Enzyme/enzyme/Enzyme/Enzyme.h"
 
 /* LIBXSMM include files, if supported. */
 #ifdef HAVE_LIBXSMM

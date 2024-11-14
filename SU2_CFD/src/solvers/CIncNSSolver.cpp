@@ -333,7 +333,7 @@ unsigned long CIncNSSolver::SetPrimitive_Variables(CSolver **solver_container, c
 
 void CIncNSSolver::BC_Wall_Generic(const CGeometry *geometry, const CConfig *config,
                                    unsigned short val_marker, unsigned short kind_boundary) {
-
+  cout << "IncNSSolver.cpp with EULER_IMPLICIT" << endl;
   const bool implicit = (config->GetKind_TimeIntScheme() == EULER_IMPLICIT);
   const bool energy = config->GetEnergy_Equation();
   const bool py_custom = config->GetMarker_All_PyCustom(val_marker);

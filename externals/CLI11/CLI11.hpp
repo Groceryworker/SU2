@@ -910,20 +910,20 @@ enum class enabler {};
 constexpr enabler dummy = {};
 } // namespace detail
 
-/// A copy of enable_if_t from C++14, compatible with C++11.
+/// A copy of std::enable_if_t from C++14, compatible with C++11.
 ///
 /// We could check to see if C++14 is being used, but it does not hurt to redefine this
 /// (even Google does this: https://github.com/google/skia/blob/master/include/private/SkTLogic.h)
 /// It is not in the std namespace anyway, so no harm done.
-template <bool B, class T = void> using enable_if_t = typename std::enable_if<B, T>::type;
+//template <bool B, class T = void> using std::enable_if_t = typename std::enable_if<B, T>::type;
 
 /// A copy of std::void_t from C++17 (helper for C++11 and C++14)
-template <typename... Ts> struct make_void { using type = void; };
+//template <typename... Ts> struct make_void { using type = void; };
 
-/// A copy of std::void_t from C++17 - same reasoning as enable_if_t, it does not hurt to redefine
-template <typename... Ts> using void_t = typename make_void<Ts...>::type;
+/// A copy of std::void_t from C++17 - same reasoning as std::enable_if_t, it does not hurt to redefine
+//template <typename... Ts> using void_t = typename make_void<Ts...>::type;
 
-/// A copy of std::conditional_t from C++14 - same reasoning as enable_if_t, it does not hurt to redefine
+/// A copy of std::conditional_t from C++14 - same reasoning as std::enable_if_t, it does not hurt to redefine
 template <bool B, class T, class F> using conditional_t = typename std::conditional<B, T, F>::type;
 
 /// Check to see if something is a vector (fail check by default)
@@ -989,6 +989,7 @@ template <typename T, typename _ = void> struct pair_adaptor : std::false_type {
     }
 };
 
+/*
 /// Adaptor for map-like structure (true version, must have key_type and mapped_type).
 /// This wraps a mapped container in a few utilities access it in a general way.
 template <typename T>
@@ -1009,6 +1010,7 @@ struct pair_adaptor<
         return std::get<1>(std::forward<Q>(pair_value));
     }
 };
+*/
 
 // Check for streamability
 // Based on https://stackoverflow.com/questions/22758291/how-can-i-detect-if-a-type-can-be-streamed-to-an-stdostream
@@ -1023,15 +1025,16 @@ template <typename S, typename T> class is_streamable {
     static const bool value = decltype(test<S, T>(0))::value;
 };
 
+
 /// Convert an object to a string (directly forward if this can become a string)
-template <typename T, enable_if_t<std::is_constructible<std::string, T>::value, detail::enabler> = detail::dummy>
+template <typename T, std::enable_if_t<std::is_constructible<std::string, T>::value, detail::enabler> = detail::dummy>
 auto to_string(T &&value) -> decltype(std::forward<T>(value)) {
     return std::forward<T>(value);
 }
 
 /// Convert an object to a string (streaming must be supported for that type)
 template <typename T,
-          enable_if_t<!std::is_constructible<std::string, T>::value && is_streamable<std::stringstream, T>::value,
+          std::enable_if_t<!std::is_constructible<std::string, T>::value && is_streamable<std::stringstream, T>::value,
                       detail::enabler> = detail::dummy>
 std::string to_string(T &&value) {
     std::stringstream stream;
@@ -1041,7 +1044,7 @@ std::string to_string(T &&value) {
 
 /// If conversion is not supported, return an empty string (streaming is not supported for that type)
 template <typename T,
-          enable_if_t<!std::is_constructible<std::string, T>::value && !is_streamable<std::stringstream, T>::value,
+          std::enable_if_t<!std::is_constructible<std::string, T>::value && !is_streamable<std::stringstream, T>::value,
                       detail::enabler> = detail::dummy>
 std::string to_string(T &&) {
     return std::string{};
@@ -1054,36 +1057,36 @@ std::string to_string(T &&) {
 /// But this is cleaner and works better in this case
 
 template <typename T,
-          enable_if_t<std::is_integral<T>::value && std::is_signed<T>::value, detail::enabler> = detail::dummy>
+          std::enable_if_t<std::is_integral<T>::value && std::is_signed<T>::value, detail::enabler> = detail::dummy>
 constexpr const char *type_name() {
     return "INT";
 }
 
 template <typename T,
-          enable_if_t<std::is_integral<T>::value && std::is_unsigned<T>::value, detail::enabler> = detail::dummy>
+          std::enable_if_t<std::is_integral<T>::value && std::is_unsigned<T>::value, detail::enabler> = detail::dummy>
 constexpr const char *type_name() {
     return "UINT";
 }
 
-template <typename T, enable_if_t<std::is_floating_point<T>::value, detail::enabler> = detail::dummy>
+template <typename T, std::enable_if_t<std::is_floating_point<T>::value, detail::enabler> = detail::dummy>
 constexpr const char *type_name() {
     return "FLOAT";
 }
 
 /// This one should not be used, since vector types print the internal type
-template <typename T, enable_if_t<is_vector<T>::value, detail::enabler> = detail::dummy>
+template <typename T, std::enable_if_t<is_vector<T>::value, detail::enabler> = detail::dummy>
 constexpr const char *type_name() {
     return "VECTOR";
 }
 /// Print name for enumeration types
-template <typename T, enable_if_t<std::is_enum<T>::value, detail::enabler> = detail::dummy>
+template <typename T, std::enable_if_t<std::is_enum<T>::value, detail::enabler> = detail::dummy>
 constexpr const char *type_name() {
     return "ENUM";
 }
 
 /// Print for all other types
 template <typename T,
-          enable_if_t<!std::is_floating_point<T>::value && !std::is_integral<T>::value && !is_vector<T>::value &&
+          std::enable_if_t<!std::is_floating_point<T>::value && !std::is_integral<T>::value && !is_vector<T>::value &&
                           !std::is_enum<T>::value,
                       detail::enabler> = detail::dummy>
 constexpr const char *type_name() {
@@ -1146,7 +1149,7 @@ inline int64_t to_flag_value(std::string val) {
 /// Signed integers
 template <
     typename T,
-    enable_if_t<std::is_integral<T>::value && std::is_signed<T>::value && !is_bool<T>::value && !std::is_enum<T>::value,
+    std::enable_if_t<std::is_integral<T>::value && std::is_signed<T>::value && !is_bool<T>::value && !std::is_enum<T>::value,
                 detail::enabler> = detail::dummy>
 bool lexical_cast(std::string input, T &output) {
     try {
@@ -1163,7 +1166,7 @@ bool lexical_cast(std::string input, T &output) {
 
 /// Unsigned integers
 template <typename T,
-          enable_if_t<std::is_integral<T>::value && std::is_unsigned<T>::value && !is_bool<T>::value, detail::enabler> =
+          std::enable_if_t<std::is_integral<T>::value && std::is_unsigned<T>::value && !is_bool<T>::value, detail::enabler> =
               detail::dummy>
 bool lexical_cast(std::string input, T &output) {
     if(!input.empty() && input.front() == '-')
@@ -1182,7 +1185,7 @@ bool lexical_cast(std::string input, T &output) {
 }
 
 /// Boolean values
-template <typename T, enable_if_t<is_bool<T>::value, detail::enabler> = detail::dummy>
+template <typename T, std::enable_if_t<is_bool<T>::value, detail::enabler> = detail::dummy>
 bool lexical_cast(std::string input, T &output) {
     try {
         auto out = to_flag_value(input);
@@ -1194,7 +1197,7 @@ bool lexical_cast(std::string input, T &output) {
 }
 
 /// Floats
-template <typename T, enable_if_t<std::is_floating_point<T>::value, detail::enabler> = detail::dummy>
+template <typename T, std::enable_if_t<std::is_floating_point<T>::value, detail::enabler> = detail::dummy>
 bool lexical_cast(std::string input, T &output) {
     try {
         size_t n = 0;
@@ -1209,7 +1212,7 @@ bool lexical_cast(std::string input, T &output) {
 
 /// String and similar
 template <typename T,
-          enable_if_t<!std::is_floating_point<T>::value && !std::is_integral<T>::value &&
+          std::enable_if_t<!std::is_floating_point<T>::value && !std::is_integral<T>::value &&
                           std::is_assignable<T &, std::string>::value,
                       detail::enabler> = detail::dummy>
 bool lexical_cast(std::string input, T &output) {
@@ -1218,7 +1221,7 @@ bool lexical_cast(std::string input, T &output) {
 }
 
 /// Enumerations
-template <typename T, enable_if_t<std::is_enum<T>::value, detail::enabler> = detail::dummy>
+template <typename T, std::enable_if_t<std::is_enum<T>::value, detail::enabler> = detail::dummy>
 bool lexical_cast(std::string input, T &output) {
     typename std::underlying_type<T>::type val;
     bool retval = detail::lexical_cast(input, val);
@@ -1231,7 +1234,7 @@ bool lexical_cast(std::string input, T &output) {
 
 /// Non-string parsable
 template <typename T,
-          enable_if_t<!std::is_floating_point<T>::value && !std::is_integral<T>::value &&
+          std::enable_if_t<!std::is_floating_point<T>::value && !std::is_integral<T>::value &&
                           !std::is_assignable<T &, std::string>::value && !std::is_enum<T>::value,
                       detail::enabler> = detail::dummy>
 bool lexical_cast(std::string input, T &output) {
@@ -1247,7 +1250,7 @@ bool lexical_cast(std::string input, T &output) {
 /// "-1" an if numbers are passed by some fashion they are captured as well so the function just checks for the most
 /// common true and false strings then uses stoll to convert the rest for summing
 template <typename T,
-          enable_if_t<std::is_integral<T>::value && std::is_unsigned<T>::value, detail::enabler> = detail::dummy>
+          std::enable_if_t<std::is_integral<T>::value && std::is_unsigned<T>::value, detail::enabler> = detail::dummy>
 void sum_flag_vector(const std::vector<std::string> &flags, T &output) {
     int64_t count{0};
     for(auto &flag : flags) {
@@ -1261,7 +1264,7 @@ void sum_flag_vector(const std::vector<std::string> &flags, T &output) {
 /// "-1" an if numbers are passed by some fashion they are captured as well so the function just checks for the most
 /// common true and false strings then uses stoll to convert the rest for summing
 template <typename T,
-          enable_if_t<std::is_integral<T>::value && std::is_signed<T>::value, detail::enabler> = detail::dummy>
+          std::enable_if_t<std::is_integral<T>::value && std::is_signed<T>::value, detail::enabler> = detail::dummy>
 void sum_flag_vector(const std::vector<std::string> &flags, T &output) {
     int64_t count{0};
     for(auto &flag : flags) {
@@ -1936,14 +1939,14 @@ class Bound : public Validator {
 
 namespace detail {
 template <typename T,
-          enable_if_t<is_copyable_ptr<typename std::remove_reference<T>::type>::value, detail::enabler> = detail::dummy>
+          std::enable_if_t<is_copyable_ptr<typename std::remove_reference<T>::type>::value, detail::enabler> = detail::dummy>
 auto smart_deref(T value) -> decltype(*value) {
     return *value;
 }
 
 template <
     typename T,
-    enable_if_t<!is_copyable_ptr<typename std::remove_reference<T>::type>::value, detail::enabler> = detail::dummy>
+    std::enable_if_t<!is_copyable_ptr<typename std::remove_reference<T>::type>::value, detail::enabler> = detail::dummy>
 typename std::remove_reference<T>::type &smart_deref(T &value) {
     return value;
 }
@@ -1987,7 +1990,7 @@ template <typename, typename V> static auto test_find(long) -> std::false_type;
 template <typename T, typename V> struct has_find : decltype(test_find<T, V>(0)) {};
 
 /// A search function
-template <typename T, typename V, enable_if_t<!has_find<T, V>::value, detail::enabler> = detail::dummy>
+template <typename T, typename V, std::enable_if_t<!has_find<T, V>::value, detail::enabler> = detail::dummy>
 auto search(const T &set, const V &val) -> std::pair<bool, decltype(std::begin(detail::smart_deref(set)))> {
     using element_t = typename detail::element_type<T>::type;
     auto &setref = detail::smart_deref(set);
@@ -1998,7 +2001,7 @@ auto search(const T &set, const V &val) -> std::pair<bool, decltype(std::begin(d
 }
 
 /// A search function that uses the built in find function
-template <typename T, typename V, enable_if_t<has_find<T, V>::value, detail::enabler> = detail::dummy>
+template <typename T, typename V, std::enable_if_t<has_find<T, V>::value, detail::enabler> = detail::dummy>
 auto search(const T &set, const V &val) -> std::pair<bool, decltype(std::begin(detail::smart_deref(set)))> {
     auto &setref = detail::smart_deref(set);
     auto it = setref.find(val);
@@ -3499,7 +3502,7 @@ class Option : public OptionBase<Option> {
 
     /// get the results as a particular type
     template <typename T,
-              enable_if_t<!is_vector<T>::value && !std::is_const<T>::value, detail::enabler> = detail::dummy>
+              std::enable_if_t<!is_vector<T>::value && !std::is_const<T>::value, detail::enabler> = detail::dummy>
     void results(T &output) const {
         bool retval;
         if(results_.empty()) {
@@ -4106,7 +4109,7 @@ class App {
     }
 
     /// Add option for non-vectors (duplicate copy needed without defaulted to avoid `iostream << value`)
-    template <typename T, enable_if_t<!is_vector<T>::value & !std::is_const<T>::value, detail::enabler> = detail::dummy>
+    template <typename T, std::enable_if_t<!is_vector<T>::value & !std::is_const<T>::value, detail::enabler> = detail::dummy>
     Option *add_option(std::string option_name,
                        T &variable, ///< The variable to set
                        std::string option_description = "",
@@ -4123,7 +4126,7 @@ class App {
     }
 
     /// Add option for a callback of a specific type
-    template <typename T, enable_if_t<!is_vector<T>::value, detail::enabler> = detail::dummy>
+    template <typename T, std::enable_if_t<!is_vector<T>::value, detail::enabler> = detail::dummy>
     Option *add_option_function(std::string option_name,
                                 const std::function<void(const T &)> &func, ///< the callback to execute
                                 std::string option_description = "") {
@@ -4149,7 +4152,7 @@ class App {
 
     /// Add option with description but with no variable assignment or callback
     template <typename T,
-              enable_if_t<std::is_const<T>::value && std::is_constructible<std::string, T>::value, detail::enabler> =
+              std::enable_if_t<std::is_const<T>::value && std::is_constructible<std::string, T>::value, detail::enabler> =
                   detail::dummy>
     Option *add_option(std::string option_name, T &option_description) {
         return add_option(option_name, CLI::callback_t(), option_description, false);
@@ -4190,7 +4193,7 @@ class App {
     }
 
     /// Add option for a vector callback of a specific type
-    template <typename T, enable_if_t<is_vector<T>::value, detail::enabler> = detail::dummy>
+    template <typename T, std::enable_if_t<is_vector<T>::value, detail::enabler> = detail::dummy>
     Option *add_option_function(std::string option_name,
                                 const std::function<void(const T &)> &func, ///< the callback to execute
                                 std::string option_description = "") {
@@ -4282,7 +4285,7 @@ class App {
     /// takes a constant string,  if a variable string is passed that variable will be assigned the results from the
     /// flag
     template <typename T,
-              enable_if_t<std::is_const<T>::value && std::is_constructible<std::string, T>::value, detail::enabler> =
+              std::enable_if_t<std::is_const<T>::value && std::is_constructible<std::string, T>::value, detail::enabler> =
                   detail::dummy>
     Option *add_flag(std::string flag_name, T &flag_description) {
         return _add_flag_internal(flag_name, CLI::callback_t(), flag_description);
@@ -4291,7 +4294,7 @@ class App {
     /// Add option for flag with integer result - defaults to allowing multiple passings, but can be forced to one if
     /// `multi_option_policy(CLI::MultiOptionPolicy::Throw)` is used.
     template <typename T,
-              enable_if_t<std::is_integral<T>::value && !is_bool<T>::value, detail::enabler> = detail::dummy>
+              std::enable_if_t<std::is_integral<T>::value && !is_bool<T>::value, detail::enabler> = detail::dummy>
     Option *add_flag(std::string flag_name,
                      T &flag_count, ///< A variable holding the count
                      std::string flag_description = "") {
@@ -4310,7 +4313,7 @@ class App {
     /// Other type version accepts all other types that are not vectors such as bool, enum, string or other classes that
     /// can be converted from a string
     template <typename T,
-              enable_if_t<!is_vector<T>::value && !std::is_const<T>::value &&
+              std::enable_if_t<!is_vector<T>::value && !std::is_const<T>::value &&
                               (!std::is_integral<T>::value || is_bool<T>::value) &&
                               !std::is_constructible<std::function<void(int)>, T>::value,
                           detail::enabler> = detail::dummy>
@@ -4331,7 +4334,7 @@ class App {
 
     /// Vector version to capture multiple flags.
     template <typename T,
-              enable_if_t<!std::is_assignable<std::function<void(int64_t)>, T>::value, detail::enabler> = detail::dummy>
+              std::enable_if_t<!std::is_assignable<std::function<void(int64_t)>, T>::value, detail::enabler> = detail::dummy>
     Option *add_flag(std::string flag_name,
                      std::vector<T> &flag_results, ///< A vector of values with the flag results
                      std::string flag_description = "") {
